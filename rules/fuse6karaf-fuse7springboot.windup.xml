@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<ruleset xmlns="http://windup.jboss.org/schema/jboss-ruleset" id="fuse6karaf-fuse7springboot" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://windup.jboss.org/schema/jboss-ruleset http://windup.jboss.org/schema/jboss-ruleset/windup-jboss-ruleset.xsd">
+
+    <metadata>
+        <description>
+            This ruleset contains rules that assist in migrating from Fuse 6.x on Karaf (with Spring-DM) to Fuse 7.x on Spring Boot 2.x on OpenShift.
+        </description>
+        <dependencies>
+        </dependencies>
+        <sourceTechnology id="fuse-karaf" versionRange="[6,7)" />
+        <targetTechnology id="fuse-spring-boot" versionRange="[7,)" />
+    </metadata>
+
+    <rules>
+        
+        <!-- POM rules -->
+        
+        <rule id="fuse6karaf-fuse7springboot-project-00001">
+            <when>
+                <xmlfile in="pom.xml" matches="//*[local-name() = 'artifactId' and text() = 'activemq-camel']" />
+            </when>
+            <perform>
+                <hint title="ActiveMQ 5.x client" effort="1" category-id="optional">
+                    <message>Replace the legacy ActiveMQ client with the `camel-jms` component and the AMQ JMS client, or, if you need XA transaction support, then you should use the AMQ Core Protocol JMS Client.</message>
+                    <link
+                        href="https://access.redhat.com/solutions/3165071"
+                        title="What are the recommended JMS clients to connect from Red Hat Fuse 7.x to Red Hat AMQ 7.x? " />
+                    <link
+                        href="https://access.redhat.com/documentation/en-us/red_hat_amq/7.4/html-single/using_the_amq_core_protocol_jms_client/index"
+                        title="Using the AMQ Core Protocol JMS Client" />
+                    <tag>activemq</tag>
+                    <tag>camel</tag>
+                </hint>
+            </perform>
+        </rule>
+
+        <!-- Spring XML rules -->
+
+        <rule id="fuse6karaf-fuse7springboot-xml-00001">
+            <when>
+                <filecontent filename="{*}.xml" pattern="http://www.springframework.org/schema/osgi" />
+            </when>
+            <perform>
+                <hint title="Code uses Spring-DM (Spring Dynamic Modules for OSGi)" effort="1" severity="mandatory">
+                    <message>Spring-DM is not supported in Fuse 7. Migrate to standard Spring namespaces instead.</message>
+                    <link
+                        href="https://access.redhat.com/documentation/en-us/red_hat_fuse/7.4/html-single/apache_camel_development_guide/index#XmlConfig-RouterSchema"
+                        title="Router Schema in a Spring XML File"/>
+                    <tag>spring-dm</tag>
+                </hint>
+            </perform>
+        </rule>
+
+        <rule id="fuse6karaf-fuse7springboot-xml-00002">
+            <when>
+                <xmlfile matches="//amq:broker">
+                    <namespace prefix="amq" uri="http://activemq.apache.org/schema/core/"/>
+                </xmlfile>
+            </when>
+            <perform>
+                <hint title="ActiveMQ 5.x embedded broker" effort="2" severity="optional">
+                    <message>
+                        <![CDATA[
+                        Replace the embedded ActiveMQ 5.x broker with the ActiveMQ Artemis equivalent, `org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ`.
+                        
+                        You may also need to add the `org.apache.activemq:artemis-server` Maven dependency for this.
+                        ]]>
+                    </message>
+                    <link
+                        href="https://activemq.apache.org/components/artemis/documentation/1.0.0/embedding-activemq.html"
+                        title="Embedding ActiveMQ"/>
+                    <tag>activemq</tag>
+                </hint>                    
+            </perform>
+        </rule>
+
+        <rule id="fuse6karaf-fuse7springboot-xml-00003">
+            <when>
+                <filecontent filename="{*}.xml" pattern="ActiveMQComponent" />
+            </when>
+            <perform>
+                <hint title="ActiveMQ 5.x Camel component" effort="1" severity="optional">
+                    <message>
+                        <![CDATA[
+                        Replace the ActiveMQ Camel component with the generic Camel JMS component.
+                        ]]>
+                    </message>
+                    <link
+                        href="https://access.redhat.com/solutions/3165071"
+                        title="What are the recommended JMS clients to connect from Red Hat Fuse 7.x to Red Hat AMQ 7.x? " />
+                    <link
+                        href="https://camel.apache.org/components/latest/jms-component.html"
+                        title="Camel JMS component"/>
+                    <tag>camel</tag>
+                    <tag>activemq</tag>
+                </hint>                    
+            </perform>
+        </rule>
+
+
+
+        <!-- Java rules -->
+        
+        <rule id="fuse6karaf-fuse7springboot-java-00001">
+            <when>
+                <javaclass references="org.apache.activemq.camel.component.{*}" />
+            </when>
+            <perform>
+                <hint title="ActiveMQ 5.x Camel component" effort="1" severity="mandatory">
+                    <message>Replace the legacy ActiveMQ Camel component with the Camel JMS component.</message>
+                    <link
+                        href="https://access.redhat.com/solutions/3165071"
+                        title="What are the recommended JMS clients to connect from Red Hat Fuse 7.x to Red Hat AMQ 7.x? " />
+                    <link
+                        href="https://camel.apache.org/components/latest/jms-component.html"
+                        title="Camel JMS component"/>
+                    <tag>camel</tag>
+                    <tag>activemq</tag>
+                 </hint>
+            </perform>
+        </rule>
+
+    </rules>
+
+
+</ruleset>
